@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Antrian M|M|2</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container" id="formContainer">
+        <h1>Kalkulator Antrian M|M|2</h1>
+        <div id="examples">
+            <span>Coba contoh-contoh berikut: </span>
+            <a href="javascript:void(0);" onclick="setExample(4, 3, 'Contoh 1')">Contoh 1</a>
+            <a href="javascript:void(0);" onclick="setExample(6, 2, 'Contoh 2')">Contoh 2</a>
+        </div>
+
+        <!-- Studi Kasus untuk Contoh 1 -->
+        <div id="studyCase1" class="study-case" style="display: none;">
+            <h2>Studi Kasus untuk Contoh 1:</h2>
+            <p>Sebuah kantor pos memiliki dua loket pelayanan. Setiap pelanggan yang datang membutuhkan waktu rata-rata 3 menit untuk dilayani di setiap loket. Pelanggan datang setiap 4 menit sekali.</p>
+        </div>
+
+        <!-- Studi Kasus untuk Contoh 2 -->
+        <div id="studyCase2" class="study-case" style="display: none;">
+            <h2>Studi Kasus untuk Contoh 2:</h2>
+            <p>Di sebuah rumah sakit dengan dua loket pelayanan, rata-rata waktu pelayanan per pasien adalah 2 menit. Pasien datang setiap 6 menit sekali.</p>
+        </div>
+
+        <form id="queueForm">
+            <label for="arrival_time">Waktu antar kedatangan (dalam menit):</label>
+            <input type="number" id="arrival_time" name="arrival_time" step="0.01" required>
+            <label for="service_time">Waktu pelayanan per pelayan (dalam menit):</label>
+            <input type="number" id="service_time" name="service_time" step="0.01" required>
+            <button type="submit">Hitung Antrian</button>
+        </form>
+    </div>
+    
+    <div class="separator" id="separator"></div>
+    <div class="container result-container" id="resultContainer" style="display: none;">
+        <h1>Hasil Perhitungan</h1>
+        <div id="output"></div>
+        <button class="goBackButton" onclick="goBack()">Kembali Hitung</button>
+    </div>
+    
+    <script>
+        // Fungsi untuk menampilkan contoh dan studi kasus terkait
+        function setExample(arrivalTime, serviceTime, example) {
+            // Menyembunyikan hasil perhitungan sebelumnya
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('separator').style.display = 'none';
+            
+            // Menyembunyikan studi kasus sebelumnya
+            document.getElementById('studyCase1').style.display = 'none';
+            document.getElementById('studyCase2').style.display = 'none';
+
+            // Menampilkan studi kasus yang sesuai dengan contoh yang dipilih
+            if (example === 'Contoh 1') {
+                document.getElementById('studyCase1').style.display = 'block';
+            } else if (example === 'Contoh 2') {
+                document.getElementById('studyCase2').style.display = 'block';
+            }
+
+            // Mengubah nilai input sesuai contoh yang dipilih
+            document.getElementById('arrival_time').value = arrivalTime;
+            document.getElementById('service_time').value = serviceTime;
+        }
+
+        // Fungsi untuk menyembunyikan hasil perhitungan dan menghapus nilai input
+        function goBack() {
+            // Menyembunyikan hasil perhitungan
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('separator').style.display = 'none';
+
+            // Menghapus nilai input
+            document.getElementById('arrival_time').value = '';
+            document.getElementById('service_time').value = '';
+
+            // Menyembunyikan studi kasus
+            document.getElementById('studyCase1').style.display = 'none';
+            document.getElementById('studyCase2').style.display = 'none';
+        }
+
+        // Menangani pengiriman formulir
+        document.getElementById('queueForm').addEventListener('submit', async function (event) {
+            event.preventDefault(); // Menghindari pengiriman formulir secara default
+            const arrivalTime = parseFloat(document.getElementById('arrival_time').value);
+            const serviceTime = parseFloat(document.getElementById('service_time').value);
+    
+            const formData = new FormData(this);
+            
+            // Mengirim data menggunakan fetch
+            const response = await fetch('/calculate', {
+                method: 'POST',
+                body: formData
+            });
+    
+            // Mengambil respons JSON dari server
+            const data = await response.json();
+            console.log(data);  // Debugging log
+    
+            const outputDiv = document.getElementById('output');
+            const resultContainer = document.getElementById('resultContainer');
+            const separator = document.getElementById('separator');
+    
+            if (data.error) {
+                outputDiv.innerHTML = `<p>Error: ${data.error}</p>`;
+                resultContainer.style.display = 'none';
+                separator.style.display = 'none';
+            } else {
+                outputDiv.innerHTML = `
+                    <p class="probability">Hasil untuk waktu antar kedatangan = ${arrivalTime} menit, waktu pelayanan = ${serviceTime} menit:</p>
+                    ${data.steps.map(step => `<p>${step}</p>`).join('')}
+                `;
+                resultContainer.style.display = 'block';
+                separator.style.display = 'block';
+                MathJax.typeset();
+                window.scrollTo({ top: resultContainer.offsetTop, behavior: 'smooth' });
+            }
+        });
+    </script>    
+</body>
+</html>
